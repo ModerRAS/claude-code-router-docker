@@ -39,10 +39,21 @@ COPY --from=builder /app/ui/dist ./ui/dist
 # 复制必要的文件
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/CLAUDE.md ./CLAUDE.md
+COPY --from=builder /app/config.example.json ./config.example.json
+COPY --from=builder /app/custom-router.example.js ./custom-router.example.js
+
+# 创建配置目录
+RUN mkdir -p /root/.claude-code-router && \
+    chown -R claude:nodejs /root && \
+    chown -R claude:nodejs /app
 
 # 设置权限
-RUN chown -R claude:nodejs /app
 USER claude
+
+# 如果不存在配置文件，复制示例配置
+RUN if [ ! -f /root/.claude-code-router/config.json ]; then \
+        cp /app/config.example.json /root/.claude-code-router/config.json; \
+    fi
 
 # 暴露端口
 EXPOSE 3456

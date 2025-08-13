@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  claude-code-router-dev:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: claude-code-router-dev
+    ports:
+      - "3456:3456"
+      - "9229:9229"  # Node.js 调试端口
+    volumes:
+      # 挂载源代码用于开发
+      - ./claude-code-router:/app
+      - ./config:/root/.claude-code-router
+      - ./logs:/root/.claude-code-router/logs
+      - /app/node_modules
+      - /app/ui/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3456
+      - DEBUG=claude-code-router:*
+    restart: unless-stopped
+    command: ["node", "--inspect=0.0.0.0:9229", "dist/cli.js", "start"]
+    networks:
+      - claude-dev-network
+
+networks:
+  claude-dev-network:
+    driver: bridge

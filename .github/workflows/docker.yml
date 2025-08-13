@@ -10,7 +10,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -40,7 +39,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ github.repository }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -61,8 +60,25 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Test Docker image
+        if: github.event_name != 'pull_request'
         run: |
-          docker run --rm -d --name test-container -p 3456:3456 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-          sleep 10
+          # 获取第一个标签（通常是分支名或latest）
+          FIRST_TAG=$(echo '${{ steps.meta.outputs.tags }}' | cut -d' ' -f1)
+          echo "Testing image: $FIRST_TAG"
+          
+          # 运行容器并等待启动
+          docker run --rm -d --name test-container -p 3456:3456 $FIRST_TAG
+          
+          # 等待服务启动（最多30秒）
+          for i in {1..30}; do
+            if curl -f http://localhost:3456 > /dev/null 2>&1; then
+              echo "Service is ready after $i seconds"
+              break
+            fi
+            echo "Waiting for service to start... ($i/30)"
+            sleep 1
+          done
+          
+          # 最终检查
           curl -f http://localhost:3456 || exit 1
           docker stop test-container
