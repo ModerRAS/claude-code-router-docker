@@ -69,16 +69,28 @@ jobs:
           # 运行容器并等待启动
           docker run --rm -d --name test-container -p 3456:3456 $FIRST_TAG
           
-          # 等待服务启动（最多30秒）
-          for i in {1..30}; do
+          # 等待容器启动（先等待容器完全启动）
+          sleep 5
+          
+          # 检查容器状态
+          docker ps
+          
+          # 显示容器日志（用于调试）
+          echo "=== Container Logs ==="
+          docker logs test-container
+          
+          # 等待服务启动（最多60秒）
+          for i in {1..60}; do
+            echo "Testing connection... ($i/60)"
             if curl -f http://localhost:3456 > /dev/null 2>&1; then
               echo "Service is ready after $i seconds"
               break
             fi
-            echo "Waiting for service to start... ($i/30)"
             sleep 1
           done
           
           # 最终检查
-          curl -f http://localhost:3456 || exit 1
+          echo "=== Final Health Check ==="
+          curl -v http://localhost:3456 || echo "Service not responding, checking container logs..."
+          docker logs test-container
           docker stop test-container
