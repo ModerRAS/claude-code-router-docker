@@ -1,0 +1,3 @@
+[submodule "claude-code-router"]
+	path = claude-code-router
+	url = https://github.com/musistudio/claude-code-router.git
