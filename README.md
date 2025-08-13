@@ -9,6 +9,9 @@
 - 🏥 **健康检查**: 内置健康检查机制
 - 🔄 **自动构建**: GitHub Actions 自动构建多平台镜像（linux/amd64, linux/arm64）
 - 📦 **缓存优化**: 利用 BuildKit 缓存加速构建
+- ⚙️ **配置管理**: 提供便捷的配置管理脚本
+- 📊 **日志管理**: 自动挂载日志目录，便于管理和查看
+- 🚀 **开发支持**: 提供开发环境配置，支持调试和热重载
 
 ## 快速开始
 
@@ -16,20 +19,25 @@
 
 ```bash
 # 从 GitHub Container Registry 拉取镜像
-docker pull ghcr.io/your-username/claude-code-router-docker:latest
+docker pull ghcr.io/moderras/claude-code-router-docker:latest
 
 # 运行容器
 docker run -d \
   --name claude-code-router \
   -p 3456:3456 \
-  -v ~/.claude-code-router:/root/.claude-code-router \
-  ghcr.io/your-username/claude-code-router-docker:latest
+  -v $(pwd)/config:/root/.claude-code-router \
+  -v $(pwd)/logs:/root/.claude-code-router/logs \
+  ghcr.io/moderras/claude-code-router-docker:latest
 ```
 
 ### 使用 Docker Compose
 
 ```bash
+# 生产环境
 docker-compose up -d
+
+# 开发环境（包含调试支持）
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
 ## 配置
@@ -41,19 +49,48 @@ docker-compose up -d
 - `PORT`: 服务端口（默认：3456）
 - `NODE_ENV`: 运行环境（默认：production）
 
-### 配置文件
+### 配置文件管理
+
+项目提供了便捷的配置管理脚本：
+
+```bash
+# 初始化配置文件
+./scripts/config.sh init
+
+# 编辑配置文件
+./scripts/config.sh edit
+
+# 查看当前配置
+./scripts/config.sh show
+
+# 验证配置文件格式
+./scripts/config.sh validate
+
+# 更新容器配置
+./scripts/config.sh copy-to-container
+
+# 从容器复制配置
+./scripts/config.sh copy-from-container
+
+# 重置为示例配置
+./scripts/config.sh reset
+```
+
+#### 手动配置文件管理
 
 配置文件挂载到 `/root/.claude-code-router` 目录：
 
 ```bash
 # 创建配置目录
-mkdir -p ~/.claude-code-router
+mkdir -p config
 
 # 复制示例配置文件
-cp claude-code-router/config.example.json ~/.claude-code-router/config.json
+cp claude-code-router/config.example.json config/config.json
 
 # 编辑配置文件
-vim ~/.claude-code-router/config.json
+vim config/config.json
+
+# 使用 Docker Compose 时配置会自动挂载
 ```
 
 ## 使用方法
@@ -104,7 +141,7 @@ git submodule init
 git submodule update
 
 # 或者递归克隆
-git clone --recursive https://github.com/your-username/claude-code-router-docker.git
+git clone --recursive https://github.com/ModerRAS/claude-code-router-docker.git
 ```
 
 ## 自动构建
